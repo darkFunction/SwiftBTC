@@ -1,4 +1,6 @@
 import Clibsecp256k1
+import CommonCrypto
+import Foundation
 
 public class BitcoinKey {
 	
@@ -34,5 +36,13 @@ public class BitcoinKey {
 		outputLen.deallocate()
 		
 		return publicKey
+	}
+	
+	public static func sha256Hash(bytes: [UInt8]) -> [UInt8] {
+		var data = Data(count: Int(CC_SHA256_DIGEST_LENGTH))
+		data.withUnsafeMutableBytes { c_hash in
+			_ = CC_SHA256(UnsafeRawPointer(bytes), UInt32(bytes.count), c_hash)
+		}
+		return [UInt8](data)
 	}
 }

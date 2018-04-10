@@ -8,11 +8,10 @@ let package = Package(
     dependencies: [
         // Dependencies declare other packages that this package depends on.
         //.package(url: "https://github.com/Boilertalk/secp256k1.swift.git")
-        .package(url: "https://github.com/darkFunction/Clibsecp256k1", .branch("master"))
+        .package(url: "https://github.com/darkFunction/Clibsecp256k1", .branch("master")),
+        .package(url: "https://github.com/IBM-Swift/CommonCrypto", .exact("1.0.0"))
     ],
     targets: [
-        // Targets are the basic building blocks of a package. A target can define a module or a test suite.
-        // Targets can depend on other targets in this package, and on products in packages which this package depends on.
         .target(
             name: "SwiftBTCLib",
             dependencies: [],
