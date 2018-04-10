@@ -1,0 +1,16 @@
+{
+  "object": {
+    "pins": [
+      {
+        "package": "Clibsecp256k1",
+        "repositoryURL": "https://github.com/darkFunction/Clibsecp256k1",
+        "state": {
+          "branch": "master",
+          "revision": "92367adae99e674515c87df1f64fed9743b7e591",
+          "version": null
+        }
+      }
+    ]
+  },
+  "version": 1
+}
