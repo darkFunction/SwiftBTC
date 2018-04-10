@@ -1,3 +1,4 @@
 # SwiftBTC
 
-A description of this package.
+Play project for interacting with the bitcoin protocol using Swift.
+
