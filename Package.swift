@@ -9,12 +9,13 @@ let package = Package(
         // Dependencies declare other packages that this package depends on.
         //.package(url: "https://github.com/Boilertalk/secp256k1.swift.git")
         .package(url: "https://github.com/darkFunction/Clibsecp256k1", .branch("master")),
-        .package(url: "https://github.com/IBM-Swift/CommonCrypto", .exact("1.0.0"))
+        .package(url: "https://github.com/IBM-Swift/CommonCrypto", .exact("1.0.0")),
+        .package(url: "https://github.com/darkFunction/SwiftRIPEMD160", .branch("master")),
     ],
     targets: [
         .target(
             name: "SwiftBTCLib",
-            dependencies: [],
+            dependencies: ["SwiftRIPEMD160"],
 			path: "Sources/SwiftBTCLib"
 		),
         .target(

@@ -1,6 +1,7 @@
 import Clibsecp256k1
 import CommonCrypto
 import Foundation
+import SwiftRIPEMD160
 
 public class BitcoinKey {
 	
@@ -38,11 +39,24 @@ public class BitcoinKey {
 		return publicKey
 	}
 	
-	public static func sha256Hash(bytes: [UInt8]) -> [UInt8] {
+	public static func sha256Hash(bytes: [UInt8]) -> [UInt8]? {
 		var data = Data(count: Int(CC_SHA256_DIGEST_LENGTH))
 		data.withUnsafeMutableBytes { c_hash in
 			_ = CC_SHA256(UnsafeRawPointer(bytes), UInt32(bytes.count), c_hash)
 		}
 		return [UInt8](data)
+	}
+	
+	public static func generateBitcoinAddress(from privateKey: [UInt8]) {
+		
+		// First we use secp256k1 algorithm to do the elliptic curve math for getting the (uncompressed) public key from the private key
+		guard let pubKey = getPublicKey(from: privateKey) else { return }
+		
+		// Then we generate the sha256 hash of the public key
+		guard let sha256 = sha256Hash(bytes: pubKey) else { return }
+
+		// Then we shorten this hash using another hash function: ripemd160
+		let address = RIPEMD160.hash(message: Data(bytes: sha256))
+		print(address.hexadecimalString)
 	}
 }

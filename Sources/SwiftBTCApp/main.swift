@@ -1,3 +1,4 @@
 import SwiftBTCLib
 
 
+BitcoinKey.generateBitcoinAddress(from: "0000000000000000000000000000000000000000000000000feedb0bdeadbeef".hexadecimalToByteArray)

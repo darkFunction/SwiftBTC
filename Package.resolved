@@ -18,6 +18,15 @@
           "revision": "9156d238dbc4c15455b77b45e721b2bb0b995e31",
           "version": "1.0.0"
         }
+      },
+      {
+        "package": "SwiftRIPEMD160",
+        "repositoryURL": "https://github.com/darkFunction/SwiftRIPEMD160",
+        "state": {
+          "branch": "master",
+          "revision": "63e069b2adf749e00d2dc8abaa7ca13e49118945",
+          "version": null
+        }
       }
     ]
   },
