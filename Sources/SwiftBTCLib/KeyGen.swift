@@ -57,6 +57,6 @@ public class BitcoinKey {
 
 		// Then we shorten this hash using another hash function: ripemd160
 		let address = RIPEMD160.hash(message: Data(bytes: sha256))
-		print(address.hexadecimalString)
+		print(address.base58String)
 	}
 }

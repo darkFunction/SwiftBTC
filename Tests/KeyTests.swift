@@ -13,15 +13,18 @@ class KeyTests: XCTestCase {
 	}
 	
 	func testSha256Hash() {
-		func hash(_ string: String) -> String {
-			return BitcoinKey.sha256Hash(bytes: [UInt8](string.utf8)).hexadecimalString
+		func hash(_ string: String) -> String? {
+			return BitcoinKey.sha256Hash(bytes: [UInt8](string.utf8))?.hexadecimalString
 		}
 		XCTAssertEqual(hash("hello"), "2CF24DBA5FB0A30E26E83B2AC5B9E29E1B161E5C1FA7425E73043362938B9824")
 		XCTAssertEqual(hash("is there anybody out there?"), "38CC69C9F6F7C90510BD60F6C3D069C2BFD8491A0A6B27B3AEB45C240E60A23F")
 	}
 	
-	func testRipemd160() {
-		// Can compare using openssl from commandline: `echo "<publicKey>" | xxd -r -p | openssl rmd160`
-		
+	func testBaseEncoding() {
+		let hexAlphabet = "0123456789abcdef"
+		XCTAssertEqual("abc123", "abc123".hexadecimalToByteArray.baseEncode(alphabet: hexAlphabet))
+		XCTAssertEqual("ff0f0f", "ff0f0f".hexadecimalToByteArray.baseEncode(alphabet: hexAlphabet))
+		XCTAssertEqual("123", "123".hexadecimalToByteArray.baseEncode(alphabet: hexAlphabet))
+		XCTAssertEqual("ffffffffffffffffffffffffff0000000000000000", "ffffffffffffffffffffffffff0000000000000000".hexadecimalToByteArray.baseEncode(alphabet: hexAlphabet))
 	}
 }
