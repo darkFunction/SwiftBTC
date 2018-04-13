@@ -5,11 +5,7 @@ import SwiftRIPEMD160
 
 public class BitcoinKey {
 	
-	public static func generatePrivateKey() -> [UInt8]? {
-		return nil
-	}
-
-	public static func getPublicKey(from privateKey: [UInt8], compressed: Bool = false) -> [UInt8]? {
+	public static func publicKey(from privateKey: [UInt8], compressed: Bool = false) -> [UInt8]? {
 		// Create signing context
 		guard let context = secp256k1_context_create(UInt32(SECP256K1_CONTEXT_SIGN)) else {
 			return nil
@@ -77,7 +73,7 @@ public class BitcoinKey {
 	public static func generateBitcoinAddress(from privateKey: [UInt8]) -> String? {
 		
 		// First we use secp256k1 algorithm to do the elliptic curve math for getting the (uncompressed) public key from the private key
-		guard let pubKey = getPublicKey(from: privateKey) else { return nil }
+		guard let pubKey = publicKey(from: privateKey) else { return nil }
 		
 		// Then we generate the sha256 hash of the public key
 		guard let sha256 = sha256Hash(bytes: pubKey) else { return nil }
