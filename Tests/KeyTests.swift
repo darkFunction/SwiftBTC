@@ -27,4 +27,11 @@ class KeyTests: XCTestCase {
 		XCTAssertEqual("123", "123".hexadecimalToByteArray.baseEncode(alphabet: hexAlphabet))
 		XCTAssertEqual("ffffffffffffffffffffffffff0000000000000000", "ffffffffffffffffffffffffff0000000000000000".hexadecimalToByteArray.baseEncode(alphabet: hexAlphabet))
 	}
+	
+	func testPublicKeyGeneration() {
+		XCTAssertEqual(BitcoinKey.generateBitcoinAddress(from: "B06D0ACBD89B1ACB721416F708B6A367C0EF74660C26BB1D9B250146FE7E97CC".hexadecimalToByteArray),
+					   "12uvDDYE4cJpbjkMkBZvY2vzgfgUjyGUpG")
+		XCTAssertEqual(BitcoinKey.generateBitcoinAddress(from: "3998BA4119D43A89452259756CD14C20A445F04D49186EC2628BF745A361EEC5".hexadecimalToByteArray),
+					   "1GCnMzpPvjBXrw7c5FrWmtCPP6ZcmGVZza")
+	}
 }

@@ -47,16 +47,45 @@ public class BitcoinKey {
 		return [UInt8](data)
 	}
 	
-	public static func generateBitcoinAddress(from privateKey: [UInt8]) {
+	// https://en.bitcoin.it/wiki/Base58Check_encoding
+	public static func base58CheckEncode(bytes: [UInt8]) -> String? {
+		// Version 0 (public key hash)
+		let version: [UInt8] = [0]
+
+		func countLeadingZeroes(_ byteArray: [UInt8]) -> Int {
+			return byteArray.reduce(0, { (acc, element) in
+				return acc + (element == 0 ? 1 : 0)
+			})
+		}
+		
+		if let hash = sha256Hash(bytes: version + bytes) {
+			// Hash the hash. Only uses first 4 chars as checksum
+			if let checksum = sha256Hash(bytes: hash)?.prefix(upTo: 4) {
+				let checksumBytes = [UInt8](checksum)
+				let address = (version + bytes + checksumBytes).base58String
+				return String(Array(repeating: "1", count: countLeadingZeroes(version + bytes)))
+					+ address
+			}
+		}
+		return nil
+	}
+	
+	public static func ripemd160Hash(bytes: [UInt8]) -> [UInt8] {
+		return [UInt8](RIPEMD160.hash(message: Data(bytes: bytes)))
+	}
+	
+	public static func generateBitcoinAddress(from privateKey: [UInt8]) -> String? {
 		
 		// First we use secp256k1 algorithm to do the elliptic curve math for getting the (uncompressed) public key from the private key
-		guard let pubKey = getPublicKey(from: privateKey) else { return }
+		guard let pubKey = getPublicKey(from: privateKey) else { return nil }
 		
 		// Then we generate the sha256 hash of the public key
-		guard let sha256 = sha256Hash(bytes: pubKey) else { return }
+		guard let sha256 = sha256Hash(bytes: pubKey) else { return nil }
 
-		// Then we shorten this hash using another hash function: ripemd160
-		let address = RIPEMD160.hash(message: Data(bytes: sha256))
-		print(address.base58String)
+		// Shorten this hash using another hash function: ripemd160
+		let address = ripemd160Hash(bytes: sha256)
+		
+		// Add version, checksum, and encode in base 58
+		return base58CheckEncode(bytes: address)
 	}
 }
