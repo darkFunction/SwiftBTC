@@ -11,12 +11,13 @@ let package = Package(
         .package(url: "https://github.com/darkFunction/Clibsecp256k1", .branch("master")),
         .package(url: "https://github.com/IBM-Swift/CommonCrypto", .exact("1.0.0")),
         .package(url: "https://github.com/darkFunction/SwiftRIPEMD160", .branch("master")),
-		.package(url: "https://github.com/attaswift/BigInt.git", from: "3.0.0")
+		.package(url: "https://github.com/attaswift/BigInt.git", .upToNextMajor(from: "3.0.0")),
+		.package(url: "https://github.com/IBM-Swift/BlueSocket", .upToNextMajor(from: "1.0.0"))
     ],
     targets: [
         .target(
             name: "SwiftBTCLib",
-            dependencies: ["SwiftRIPEMD160", "BigInt"],
+            dependencies: ["SwiftRIPEMD160", "BigInt", "Socket"],
 			path: "Sources/SwiftBTCLib"
 		),
         .target(

@@ -11,6 +11,15 @@
         }
       },
       {
+        "package": "Socket",
+        "repositoryURL": "https://github.com/IBM-Swift/BlueSocket",
+        "state": {
+          "branch": null,
+          "revision": "36561e7722f26151b8a6ba4b4bb96fd9b3f36980",
+          "version": "1.0.4"
+        }
+      },
+      {
         "package": "Clibsecp256k1",
         "repositoryURL": "https://github.com/darkFunction/Clibsecp256k1",
         "state": {
