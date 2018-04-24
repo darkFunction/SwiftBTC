@@ -19,9 +19,10 @@ private let seeds = [
 	"seed.bitcoin.sprovoost.nl"
 ]
 
-public enum Port: Int {
-	case mainNet = 8333
-	case testNet = 18333
+public typealias Network = (port: Int, startString: String)
+public struct Networks {
+	public static let mainNet: Network = (port: 8333, startString: "0xf9beb4d9")
+	public static let testNete: Network = (port: 18333, startString: "0x0b110907")
 }
 
 public enum NodeType: Int {
@@ -51,28 +52,83 @@ public class BitcoinNetwork {
 		return addresses.random
 	}
 	
-	public static func connectToPeer(address: String, port: Port = .mainNet) throws {
+	public static func connectToPeer(address: String, network: Network  = Networks.mainNet) throws {
 		
 		let socket = try Socket.create()
-		try socket.connect(to: address, port: Int32(port.rawValue))
+		try socket.connect(to: address, port: Int32(network.port))
+	
+//		struct MessageHeader {
+//			let startString: String
+//			let commandName: String
+//			let payloadSize: UInt32
+//			let checkSum: [Byte]
+//
+//			func pack() -> [Byte]? {
+//				guard checkSum.count == 4 else { return 0 }
+//
+//			}
+//		}
 		
-		let version: Int32 = Int32(CFSwapInt32HostToLittle(0))
-		let localServices: UInt64 = CFSwapInt64HostToLittle(UInt64(NodeType.unknown.rawValue))
-		let timestamp: Int64 = Int64(CFSwapInt64HostToLittle(UInt64(Date().timeIntervalSince1970)))
-		let remoteServices: UInt64 = CFSwapInt64HostToLittle(UInt64(NodeType.full.rawValue))
-		let remoteAddress: [UInt8] = "::ffff:\(address)".withCString { (startByte) -> [UInt8] in // IPv4 mapped to IPv6
-			var charArray = [UInt8](repeating: 0, count: 16)
-			var i = 0
-			while true && i < 16 {
-				if startByte[i] == nil { break }
-				charArray[i] = UInt8(startByte[i])
-				i += 1
+		struct VersionMessage {
+			let protocolVersion: Int32
+			let localServices: NodeType
+			let timeStamp: Date
+			let remoteServices: NodeType
+			let remoteAddress: IPv6Address
+			let remotePort: Int
+			let localAddress: IPv6Address
+			let localPort: Int
+			let nonce: UInt64
+			let userAgent: String
+			let startHeight: Int32
+			let relay: Byte
+			
+			func pack() -> [Byte]? {
+				var packed = [Byte]()
+				
+				guard let remoteAddressBytes = remoteAddress.toByteArray, let localAddressBytes = localAddress.toByteArray else {
+					return nil
+				}
+				
+				let userAgentBytes: [UInt8] = Array(userAgent.utf8)
+				guard userAgentBytes.count < Byte.max else { return nil }
+				
+				packed += toByteArray(protocolVersion).littleEndian
+				packed += toByteArray(UInt64(localServices.rawValue)).littleEndian
+				packed += toByteArray(Int64(timeStamp.timeIntervalSince1970)).littleEndian
+				packed += toByteArray(UInt64(remoteServices.rawValue)).littleEndian
+				packed += remoteAddressBytes.bigEndian
+				packed += toByteArray(UInt16(remotePort)).bigEndian
+				packed += toByteArray(UInt64(localServices.rawValue)).littleEndian
+				packed += localAddressBytes.bigEndian
+				packed += toByteArray(UInt16(localPort)).bigEndian
+				packed += toByteArray(UInt64(nonce)).littleEndian
+				packed += [Byte(userAgentBytes.count)]
+				packed += userAgentBytes
+				packed += toByteArray(Int32(startHeight)).littleEndian
+				packed += [relay]
+				
+				return packed
 			}
-			return charArray
 		}
 		
+		var message = VersionMessage(protocolVersion: 70015,
+									 localServices: .unknown,
+									 timeStamp: Date(),
+									 remoteServices: .full,
+									 remoteAddress: IPv6Address(stringLiteral: "::ffff:\(address)"),
+									 remotePort: network.port,
+									 localAddress: IPv6Address(stringLiteral: "::ffff:127.0.0.1"),
+									 localPort: network.port,
+									 nonce: 0,
+									 userAgent: "/darkFunction:0.0.1",
+									 startHeight: 519567,
+									 relay: 0).pack()
+		
+		
+		
 	}
-	
+
 }
 
 

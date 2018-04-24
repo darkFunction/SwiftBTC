@@ -8,8 +8,14 @@
 import Foundation
 import BigInt
 
+public typealias Byte = UInt8
 
-extension Collection where Iterator.Element == UInt8 {
+public func toByteArray<T>(_ value: T) -> [Byte] {
+	var value = value
+	return withUnsafeBytes(of: &value, { Array<Byte>($0) })
+}
+
+extension Collection where Iterator.Element == Byte {
 
 	public var hexadecimalString: String {
 		return map { String(format: "%02X", $0) }.joined()
@@ -34,24 +40,53 @@ extension Collection where Iterator.Element == UInt8 {
 		}
 		return String(output.reversed())
 	}
+	
+	public var bigEndian: [Byte] {
+		return CFByteOrderGetCurrent() == CFByteOrder(CFByteOrderBigEndian.rawValue) ? Array(self) : self.reversed()
+	}
+	
+	public var littleEndian: [Byte] {
+		return CFByteOrderGetCurrent() == CFByteOrder(CFByteOrderLittleEndian.rawValue) ? Array(self) : self.reversed()
+	}
 }
 
-extension String {
+
+public struct HexadecimalString: ExpressibleByStringLiteral {
+	let value: String
 	
-	public var hexadecimalToByteArray: [UInt8] {
-		let padded = self.count % 2 == 0 ? self : "0".appending(self)
+	public init(stringLiteral value: StringLiteralType) {
+		self.value = value
+	}
+	
+	public var toByteArray: [Byte] {
+		let padded = value.count % 2 == 0 ? value : "0".appending(value)
 		let hex = Array(padded)
-		return stride(from: 0, to: count, by: 2).compactMap {
-			UInt8(String(hex[$0..<$0.advanced(by: 2)]), radix: 16)
+		return stride(from: 0, to: value.count, by: 2).compactMap {
+			Byte(String(hex[$0..<$0.advanced(by: 2)]), radix: 16)
 		}
 	}
+}
+
+public struct IPv6Address: ExpressibleByStringLiteral {
+	let stringValue: String
 	
-	public var ipv6AddressToByteArray: [UInt8]? {
-		return ipv6AddressExpand?.split(separator: ":").reduce("", +).hexadecimalToByteArray
+	public init(stringLiteral value: StringLiteralType) {
+		stringValue = value
 	}
 	
-	public var ipv6AddressExpand: String? {
-		let words = split(separator: ":", omittingEmptySubsequences: false)
+	public func isValid() -> Bool {
+		return toByteArray != nil
+	}
+	
+	public var toByteArray: [Byte]? {
+		if let expanded = expanded {
+			return getByteArray(from: expanded)
+		}
+		return nil
+	}
+	
+	public var expanded: String? {
+		let words = stringValue.split(separator: ":", omittingEmptySubsequences: false)
 		var fillCount = 0
 		// Pad each word with zeroes
 		var expanded = words.enumerated().reduce("") { (result: String, item: (index: Int, word: Substring)) -> String in
@@ -67,14 +102,19 @@ extension String {
 			// Found more than one instance of "::", address is invalid
 			return nil
 		}
-	
+		
+		if expanded.count < 39 {
+			// Should be 39 (or more if ipv4 mapped)
+			return nil
+		}
+		
 		// IPv4 mapping
 		
 		// If first 80 bits (5 words) are zero we have an IPv4 address
 		if expanded.split(separator: ":").reduce("", +).prefix(upTo: expanded.index(expanded.startIndex, offsetBy: 20)) == String(repeating: "0", count: 20) {
 			let ipv4 = expanded.split(separator: ":").last
-			if let ipv4Split = ipv4?.split(separator: ".").compactMap({ (decimalString) -> UInt8? in
-				return UInt8(decimalString)
+			if let ipv4Split = ipv4?.split(separator: ".").compactMap({ (decimalString) -> Byte? in
+				return Byte(decimalString)
 			}) {
 				if ipv4Split.count == 4 {
 					// Seems to be a valid IPv4
@@ -103,7 +143,11 @@ extension String {
 		}
 		
 		// Sanity check length
-		return expanded.count == 39 ? expanded.lowercased() : nil
+		return getByteArray(from: expanded) != nil ? expanded.lowercased() : nil
 	}
-
+	
+	private func getByteArray(from: String) -> [Byte]? {
+		let bytes = HexadecimalString(stringLiteral: from.split(separator: ":").reduce("", +)).toByteArray
+		return bytes.count == 16 ? (CFByteOrderGetCurrent() == CFByteOrder(CFByteOrderLittleEndian.rawValue) ? bytes.reversed() : bytes) : nil
+	}
 }

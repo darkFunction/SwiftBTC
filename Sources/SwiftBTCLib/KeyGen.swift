@@ -5,7 +5,7 @@ import SwiftRIPEMD160
 
 public class BitcoinKey {
 	
-	public static func publicKey(from privateKey: [UInt8], compressed: Bool = false) -> [UInt8]? {
+	public static func publicKey(from privateKey: [Byte], compressed: Bool = false) -> [Byte]? {
 		// Create signing context
 		guard let context = secp256k1_context_create(UInt32(SECP256K1_CONTEXT_SIGN)) else {
 			return nil
@@ -16,7 +16,7 @@ public class BitcoinKey {
 		let result = secp256k1_ec_pubkey_create(
 			context,
 			&c_publicKey,
-			UnsafePointer<UInt8>(privateKey)
+			UnsafePointer<Byte>(privateKey)
 		)
 		defer {
 			secp256k1_context_destroy(context)
@@ -24,7 +24,7 @@ public class BitcoinKey {
 
 		// Serialise public key data into byte array (see header docs for secp256k1_pubkey)
 		let keySize = compressed ? 33 : 65
-		let output = UnsafeMutablePointer<UInt8>.allocate(capacity: keySize)
+		let output = UnsafeMutablePointer<Byte>.allocate(capacity: keySize)
 		let outputLen = UnsafeMutablePointer<Int>.allocate(capacity: 1)
 		defer {
 			output.deallocate()
@@ -32,27 +32,27 @@ public class BitcoinKey {
 		}
 		outputLen.initialize(to: keySize)
 		secp256k1_ec_pubkey_serialize(context, output, outputLen, &c_publicKey, UInt32(compressed ? SECP256K1_EC_COMPRESSED : SECP256K1_EC_UNCOMPRESSED))
-		let publicKey = (result == 1) ? [UInt8](UnsafeBufferPointer(start: output, count: keySize)) : nil
+		let publicKey = (result == 1) ? [Byte](UnsafeBufferPointer(start: output, count: keySize)) : nil
 		
 		
 		
 		return publicKey
 	}
 	
-	public static func sha256Hash(bytes: [UInt8]) -> [UInt8]? {
+	public static func sha256Hash(bytes: [Byte]) -> [Byte]? {
 		var data = Data(count: Int(CC_SHA256_DIGEST_LENGTH))
 		data.withUnsafeMutableBytes { c_hash in
 			_ = CC_SHA256(UnsafeRawPointer(bytes), UInt32(bytes.count), c_hash)
 		}
-		return [UInt8](data)
+		return [Byte](data)
 	}
 	
 	// https://en.bitcoin.it/wiki/Base58Check_encoding
-	public static func base58CheckEncode(bytes: [UInt8]) -> String? {
+	public static func base58CheckEncode(bytes: [Byte]) -> String? {
 		// Version 0 (public key hash)
-		let version: [UInt8] = [0]
+		let version: [Byte] = [0]
 
-		func countLeadingZeroes(_ byteArray: [UInt8]) -> Int {
+		func countLeadingZeroes(_ byteArray: [Byte]) -> Int {
 			return byteArray.reduce(0, { (acc, element) in
 				return acc + (element == 0 ? 1 : 0)
 			})
@@ -61,7 +61,7 @@ public class BitcoinKey {
 		if let hash = sha256Hash(bytes: version + bytes) {
 			// Hash the hash. Only uses first 4 chars as checksum
 			if let checksum = sha256Hash(bytes: hash)?.prefix(upTo: 4) {
-				let checksumBytes = [UInt8](checksum)
+				let checksumBytes = [Byte](checksum)
 				let address = (version + bytes + checksumBytes).base58String
 				return String(Array(repeating: "1", count: countLeadingZeroes(version + bytes)))
 					+ address
@@ -70,11 +70,11 @@ public class BitcoinKey {
 		return nil
 	}
 	
-	public static func ripemd160Hash(bytes: [UInt8]) -> [UInt8] {
-		return [UInt8](RIPEMD160.hash(message: Data(bytes: bytes)))
+	public static func ripemd160Hash(bytes: [Byte]) -> [Byte] {
+		return [Byte](RIPEMD160.hash(message: Data(bytes: bytes)))
 	}
 	
-	public static func generateBitcoinAddress(from privateKey: [UInt8]) -> String? {
+	public static func generateBitcoinAddress(from privateKey: [Byte]) -> String? {
 		
 		// First we use secp256k1 algorithm to do the elliptic curve math for getting the (uncompressed) public key from the private key
 		guard let pubKey = publicKey(from: privateKey) else { return nil }
