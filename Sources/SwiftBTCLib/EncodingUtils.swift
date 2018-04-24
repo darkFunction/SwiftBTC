@@ -55,7 +55,11 @@ public struct HexadecimalString: ExpressibleByStringLiteral {
 	let value: String
 	
 	public init(stringLiteral value: StringLiteralType) {
-		self.value = value
+		if value.hasPrefix("0x") {
+			self.value = String(value.dropFirst(2))
+		} else {
+			self.value = value
+		}
 	}
 	
 	public var toByteArray: [Byte] {
