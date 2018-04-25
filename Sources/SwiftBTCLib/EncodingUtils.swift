@@ -71,26 +71,24 @@ public struct HexadecimalString: ExpressibleByStringLiteral {
 	}
 }
 
-public struct IPv6Address: ExpressibleByStringLiteral {
-	let stringValue: String
+public struct IPv6Address {
+	public let stringValue: String
+	public let expanded: String
+	public let byteArray: [Byte]
 	
-	public init(stringLiteral value: StringLiteralType) {
-		stringValue = value
-	}
-	
-	public func isValid() -> Bool {
-		return toByteArray != nil
-	}
-	
-	public var toByteArray: [Byte]? {
-		if let expanded = expanded {
-			return getByteArray(from: expanded)
+	public init?(_ string: String) {
+		stringValue = string
+		
+		if let expanded = IPv6Address.expand(address: stringValue), let byteArray = IPv6Address.getByteArray(fromExpandedAddress: expanded) {
+			self.expanded = expanded
+			self.byteArray = byteArray
+		} else {
+			return nil
 		}
-		return nil
 	}
 	
-	public var expanded: String? {
-		let words = stringValue.split(separator: ":", omittingEmptySubsequences: false)
+	private static func expand(address: String) -> String? {
+		let words = address.split(separator: ":", omittingEmptySubsequences: false)
 		var fillCount = 0
 		// Pad each word with zeroes
 		var expanded = words.enumerated().reduce("") { (result: String, item: (index: Int, word: Substring)) -> String in
@@ -147,11 +145,11 @@ public struct IPv6Address: ExpressibleByStringLiteral {
 		}
 		
 		// Sanity check length
-		return getByteArray(from: expanded) != nil ? expanded.lowercased() : nil
+		return getByteArray(fromExpandedAddress: expanded) != nil ? expanded.lowercased() : nil
 	}
 	
-	private func getByteArray(from: String) -> [Byte]? {
-		let bytes = HexadecimalString(stringLiteral: from.split(separator: ":").reduce("", +)).toByteArray
+	private static func getByteArray(fromExpandedAddress address: String) -> [Byte]? {
+		let bytes = HexadecimalString(stringLiteral: address.split(separator: ":").reduce("", +)).toByteArray
 		return bytes.count == 16 ? (CFByteOrderGetCurrent() == CFByteOrder(CFByteOrderLittleEndian.rawValue) ? bytes.reversed() : bytes) : nil
 	}
 }
