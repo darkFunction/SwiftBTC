@@ -7,7 +7,6 @@
 
 import Foundation
 
-public typealias Network = (port: Int, startString: HexadecimalString)
 
 public enum NodeType: Int {
 	case unknown = 0
@@ -33,16 +32,17 @@ public protocol MessagePayload {
 public struct Message {
 	
 	private struct MessageHeader {
-		let network: Network
+		let startString: HexadecimalString
 		let commandName: String
 		let payloadSize: UInt32
 		let checksum: [Byte]
 		
 		func pack() -> [Byte] {
 			var packed = [Byte]()
+			let commandMaxLength = 12
 			
-			packed += network.startString.toByteArray.littleEndian
-			packed += [UInt8](commandName.prefix(12).appending(String(repeating: "0", count: 12 - commandName.count)).utf8).littleEndian
+			packed += startString.toByteArray.littleEndian
+			packed += [UInt8](commandName.prefix(commandMaxLength).appending(String(repeating: "\0", count: commandMaxLength - commandName.count)).utf8).littleEndian  // Command name is padded with null chars (\0)
 			packed += toByteArray(payloadSize).littleEndian
 			packed += checksum.prefix(upTo: 4)
 			
@@ -55,7 +55,7 @@ public struct Message {
 	
 	public let bytes: [Byte]
 	
-	init?(network: Network, payload: MessagePayload) {
+	init?(startString: HexadecimalString, payload: MessagePayload) {
 		self.payload = payload
 		let packedPayload = payload.pack()
 		
@@ -66,7 +66,7 @@ public struct Message {
 		}
 		
 		header = MessageHeader(
-			network: network,
+			startString: startString,
 			commandName: payload.commandName,
 			payloadSize: UInt32(packedPayload.count),
 			checksum: hash2)
@@ -83,9 +83,9 @@ public struct VersionPayload: MessagePayload {
 	let timeStamp: Date
 	let remoteServices: NodeType
 	let remoteAddress: IPv6Address
-	let remotePort: Int
+	let remotePort: UInt16
 	let localAddress: IPv6Address
-	let localPort: Int
+	let localPort: UInt16
 	let nonce: UInt64
 	let userAgent: UserAgent
 	let startHeight: Int32
@@ -99,10 +99,10 @@ public struct VersionPayload: MessagePayload {
 		packed += toByteArray(Int64(timeStamp.timeIntervalSince1970)).littleEndian
 		packed += toByteArray(UInt64(remoteServices.rawValue)).littleEndian
 		packed += remoteAddress.byteArray.bigEndian
-		packed += toByteArray(UInt16(remotePort)).bigEndian
+		packed += toByteArray(remotePort).bigEndian
 		packed += toByteArray(UInt64(localServices.rawValue)).littleEndian
 		packed += localAddress.byteArray.bigEndian
-		packed += toByteArray(UInt16(localPort)).bigEndian
+		packed += toByteArray(localPort).bigEndian
 		packed += toByteArray(UInt64(nonce)).littleEndian
 		packed += [Byte(userAgent.bytes.count)]
 		packed += userAgent.bytes

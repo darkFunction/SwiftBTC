@@ -9,25 +9,45 @@ import CFNetwork
 import Socket
 import Foundation
 
-private let seeds = [
-	"seed.bitcoin.sipa.be",
-	"dnsseed.bluematt.me",
-	"dnsseed.bitcoin.dashjr.org",
-	"seed.bitcoinstats.com",
-	"seed.bitcoin.jonasschnelli.ch",
-	"seed.btc.petertodd.org",
-	"seed.bitcoin.sprovoost.nl"
-]
 
-public struct Networks {
-	public static let mainNet: Network = (port: 8333, startString: "0xf9beb4d9")
-	public static let testNete: Network = (port: 18333, startString: "0x0b110907")
+public enum Network {
+	case mainNet
+	case testNet
+
+	struct NetworkInfo {
+		let port: UInt16
+		let startString: HexadecimalString
+		let seeds: [String]
+	}
+	
+	var info: NetworkInfo {
+		switch self {
+		case .mainNet:
+			return NetworkInfo(port: 8333, startString: "0xf9beb4d9", seeds:  [
+				"seed.bitcoin.sipa.be",
+				"dnsseed.bluematt.me",
+				"dnsseed.bitcoin.dashjr.org",
+				"seed.bitcoinstats.com",
+				"seed.bitcoin.jonasschnelli.ch",
+				"seed.btc.petertodd.org",
+				"seed.bitcoin.sprovoost.nl"
+			])
+		case .testNet:
+			return NetworkInfo(port: 18333, startString: "0x0b110907", seeds:  [
+				"testnet-seed.bitcoin.jonasschnelli.ch",
+				"seed.tbtc.petertodd.org",
+				"seed.testnet.bitcoin.sprovoost.nl",
+				"testnet-seed.bluematt.me"
+			])
+		}
+	}
+	
 }
 
 public class BitcoinNetwork {
 	
-	public static func randomSeedNode() -> String? {
-		guard let seed = seeds.random else { return nil }
+	public static func randomSeedNode(network: Network = .mainNet) -> String? {
+		guard let seed = network.info.seeds.random else { return nil }
 		
 		let hostent = gethostbyname(seed)
 		
@@ -46,11 +66,18 @@ public class BitcoinNetwork {
 		return addresses.random
 	}
 	
-	public static func connectToPeer(address: String, network: Network = Networks.mainNet) throws {
+	public static func connectToPeer(address: String, network: Network = .mainNet) throws {
 		
 		let socket = try Socket.create()
-		try socket.connect(to: address, port: Int32(network.port))
-	
+		try socket.connect(to: address, port: Int32(network.info.port))
+		
+		print("Connected to \(address)")
+			
+		defer {
+			socket.close()
+		}
+		
+		guard socket.isConnected else { return }
 		guard let remoteAddress = IPv6Address("::ffff:\(address)"), let localAddress = IPv6Address("::ffff:127.0.0.1") else { return }
 		
 		let versionPayload = VersionPayload(
@@ -59,18 +86,23 @@ public class BitcoinNetwork {
 			timeStamp: Date(),
 			remoteServices: .full,
 			remoteAddress: remoteAddress,
-			remotePort: network.port,
+			remotePort: network.info.port,
 			localAddress: localAddress,
-			localPort: network.port,
+			localPort: network.info.port,
 			nonce: 0,
 			userAgent: UserAgent("/darkFunction:0.0.1"),
 			startHeight: 519567,
 			relay: 0)
 			
-		let message = Message(network: network, payload: versionPayload)
+		if let message = Message(startString: network.info.startString, payload: versionPayload) {
 		
-		// Send message
-		
+			var bytes = message.bytes
+			try socket.write(from: &bytes, bufSize: bytes.count)
+
+			var data = Data()
+			try socket.read(into: &data)
+			print(data)
+		}
 	}
 
 }

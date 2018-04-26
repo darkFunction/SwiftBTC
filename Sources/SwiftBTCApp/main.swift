@@ -1,5 +1,7 @@
 import SwiftBTCLib
 
-if let address = BitcoinNetwork.randomSeedNode() {
-	try BitcoinNetwork.connectToPeer(address: address)
+let network: Network = .testNet
+
+if let address = BitcoinNetwork.randomSeedNode(network: network) {
+	try BitcoinNetwork.connectToPeer(address: address, network: network)
 }
